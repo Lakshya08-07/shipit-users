@@ -6,8 +6,10 @@
     <title>Modern Music Player</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- Correction: Use <link> for Google Fonts instead of @import for better performance -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        /* Correction: Removed @import, now using <link> above */
         body { font-family: 'Poppins', sans-serif; }
         
         .gradient-bg {
@@ -53,6 +55,8 @@
     </style>
 </head>
 <body class="gradient-bg min-h-screen flex items-center justify-center p-4">
+    <!-- Correction: Wrap main content in <main> for semantic HTML -->
+    <main>
     <div class="glass-effect rounded-3xl p-8 w-full max-w-md shadow-2xl">
         <!-- Header -->
         <div class="text-center mb-8">
@@ -70,8 +74,9 @@
         <div class="text-center mb-8">
             <div class="relative inline-block">
                 <div id="albumArt" class="w-48 h-48 mx-auto rounded-full shadow-lg vinyl-spin paused overflow-hidden">
+                    <!-- Correction: Use empty alt for decorative image -->
                     <img id="albumImage" src="https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=300&h=300&fit=crop&crop=center" 
-                         alt="Album Art" class="w-full h-full object-cover">
+                         alt="" class="w-full h-full object-cover">
                 </div>
                 <div class="absolute inset-0 rounded-full border-4 border-white/20"></div>
                 <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-6 h-6 bg-black rounded-full"></div>
@@ -86,7 +91,8 @@
         <div class="mb-6">
             <div class="flex justify-between text-sm text-gray-300 mb-2">
                 <span id="currentTime">0:00</span>
-                <span id="duration">3:45</span>
+                <!-- Correction: Set initial duration to 0:00, will be updated by JS -->
+                <span id="duration">0:00</span>
             </div>
             <div class="relative">
                 <div class="w-full h-2 bg-white/20 rounded-full">
@@ -98,39 +104,41 @@
 
         <!-- Controls -->
         <div class="flex items-center justify-center space-x-6 mb-8">
-            <button id="shuffleBtn" class="text-white/60 hover:text-white transition-colors">
-                <i class="fas fa-random text-lg"></i>
+            <!-- Correction: Add type="button" and aria-label for accessibility -->
+            <button id="shuffleBtn" type="button" class="text-white/60 hover:text-white transition-colors" aria-label="Shuffle">
+                <i class="fas fa-random text-lg" aria-hidden="true"></i>
             </button>
-            <button id="prevBtn" class="text-white hover:text-white/80 transition-colors">
-                <i class="fas fa-step-backward text-2xl"></i>
+            <button id="prevBtn" type="button" class="text-white hover:text-white/80 transition-colors" aria-label="Previous">
+                <i class="fas fa-step-backward text-2xl" aria-hidden="true"></i>
             </button>
-            <button id="playPauseBtn" class="bg-white text-purple-600 w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg">
-                <i class="fas fa-play text-2xl ml-1"></i>
+            <button id="playPauseBtn" type="button" class="bg-white text-purple-600 w-16 h-16 rounded-full flex items-center justify-center hover:bg-gray-100 transition-all transform hover:scale-105 shadow-lg" aria-label="Play/Pause">
+                <i class="fas fa-play text-2xl ml-1" aria-hidden="true"></i>
             </button>
-            <button id="nextBtn" class="text-white hover:text-white/80 transition-colors">
-                <i class="fas fa-step-forward text-2xl"></i>
+            <button id="nextBtn" type="button" class="text-white hover:text-white/80 transition-colors" aria-label="Next">
+                <i class="fas fa-step-forward text-2xl" aria-hidden="true"></i>
             </button>
-            <button id="repeatBtn" class="text-white/60 hover:text-white transition-colors">
-                <i class="fas fa-redo text-lg"></i>
+            <button id="repeatBtn" type="button" class="text-white/60 hover:text-white transition-colors" aria-label="Repeat">
+                <i class="fas fa-redo text-lg" aria-hidden="true"></i>
             </button>
         </div>
 
         <!-- Volume Control -->
         <div class="flex items-center space-x-3 mb-6">
-            <i class="fas fa-volume-down text-white text-lg"></i>
+            <!-- Correction: aria-hidden for decorative icons -->
+            <i class="fas fa-volume-down text-white text-lg" aria-hidden="true"></i>
             <div class="flex-1 relative">
                 <div class="w-full h-2 bg-white/20 rounded-full">
                     <div id="volumeBar" class="progress-bar h-full rounded-full transition-all duration-300" style="width: 70%"></div>
                 </div>
                 <div id="volumeHandle" class="absolute top-1/2 transform -translate-y-1/2 w-4 h-4 bg-white rounded-full shadow-lg transition-all duration-300" style="left: 70%"></div>
             </div>
-            <i class="fas fa-volume-up text-white text-lg"></i>
+            <i class="fas fa-volume-up text-white text-lg" aria-hidden="true"></i>
         </div>
 
         <!-- Playlist -->
         <div class="text-white">
             <h3 class="text-lg font-semibold mb-4 flex items-center">
-                <i class="fas fa-list-ul mr-2"></i>
+                <i class="fas fa-list-ul mr-2" aria-hidden="true"></i>
                 Playlist
             </h3>
             <div id="playlist" class="space-y-2 max-h-40 overflow-y-auto">
@@ -138,10 +146,10 @@
             </div>
         </div>
     </div>
-
+    </main>
     <!-- Hidden Audio Element -->
     <audio id="audioPlayer" preload="metadata"></audio>
-
-    <script src="music-player.js"></script>
+    <!-- Correction: Add defer to script for best practice -->
+    <script src="music-player.js" defer></script>
 </body>
 </html>
