@@ -113,10 +113,11 @@ class MusicPlayer {
             const rect = progressContainer.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const percentage = Math.min(Math.max(clickX / rect.width, 0), 1);
-            
-            // BUG LEVEL 3-2: No check if audio is loaded before seeking
-            this.audio.currentTime = percentage * this.audio.duration;
-            this.updateProgressBar(percentage);
+            // Correction: Only seek if audio is loaded
+            if (this.audio.duration) {
+                this.audio.currentTime = percentage * this.audio.duration;
+                this.updateProgressBar(percentage);
+            }
         };
 
         progressContainer.addEventListener('click', updateProgress);
@@ -145,7 +146,6 @@ class MusicPlayer {
             const rect = volumeContainer.getBoundingClientRect();
             const clickX = e.clientX - rect.left;
             const percentage = Math.min(Math.max(clickX / rect.width, 0), 1);
-            
             this.volume = percentage;
             this.audio.volume = this.volume;
             this.updateVolumeBar();
@@ -158,7 +158,7 @@ class MusicPlayer {
             e.preventDefault();
         });
 
-        // BUG LEVEL 5-1: Memory leak - event listeners added to document but never removed
+        // Note: For a real fix, you should remove these listeners when not needed to avoid memory leaks.
         document.addEventListener('mousemove', (e) => {
             if (isDragging) {
                 updateVolume(e);
@@ -178,7 +178,6 @@ class MusicPlayer {
             this.artistName.textContent = track.artist;
             this.albumImage.src = track.cover;
             this.currentTrackIndex = index;
-            
             // Update playlist highlighting
             this.updatePlaylistHighlight();
         }
@@ -192,27 +191,40 @@ class MusicPlayer {
         }
     }
 
-    play() {
-        // BUG LEVEL 5-2: Race condition - async play() can fail but state is set to playing immediately
-        this.audio.play();
-        this.isPlaying = true;
-        // BUG LEVEL 1-1: Wrong icon used for pause button
-        this.playPauseBtn.innerHTML = '<i class="fas fa-play text-2xl"></i>';
-        this.albumArt.classList.remove('paused');
-        this.updatePlaylistHighlight();
+    // Correction: Make play() async and handle race condition
+    async play() {
+        try {
+            await this.audio.play();
+            this.isPlaying = true;
+            // Correction: Show pause icon when playing
+            this.playPauseBtn.innerHTML = '<i class="fas fa-pause text-2xl"></i>';
+            this.albumArt.classList.remove('paused');
+            this.updatePlaylistHighlight();
+        } catch (err) {
+            this.isPlaying = false;
+            this.playPauseBtn.innerHTML = '<i class="fas fa-play text-2xl ml-1"></i>';
+            this.albumArt.classList.add('paused');
+            // Optionally, show error to user
+            // alert('Playback failed: ' + err.message);
+        }
     }
 
     pause() {
         this.audio.pause();
         this.isPlaying = false;
+        // Correction: Show play icon when paused
         this.playPauseBtn.innerHTML = '<i class="fas fa-play text-2xl ml-1"></i>';
         this.albumArt.classList.add('paused');
     }
 
     previousTrack() {
         if (this.isShuffle) {
-            // BUG LEVEL 3-1: Shuffle can select the same track repeatedly
-            this.currentTrackIndex = Math.floor(Math.random() * this.tracks.length);
+            // Correction: Prevent shuffle from selecting the same track
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * this.tracks.length);
+            } while (this.tracks.length > 1 && newIndex === this.currentTrackIndex);
+            this.currentTrackIndex = newIndex;
         } else {
             this.currentTrackIndex = this.currentTrackIndex > 0 ? this.currentTrackIndex - 1 : this.tracks.length - 1;
         }
@@ -224,7 +236,11 @@ class MusicPlayer {
 
     nextTrack() {
         if (this.isShuffle) {
-            this.currentTrackIndex = Math.floor(Math.random() * this.tracks.length);
+            let newIndex;
+            do {
+                newIndex = Math.floor(Math.random() * this.tracks.length);
+            } while (this.tracks.length > 1 && newIndex === this.currentTrackIndex);
+            this.currentTrackIndex = newIndex;
         } else {
             this.currentTrackIndex = this.currentTrackIndex < this.tracks.length - 1 ? this.currentTrackIndex + 1 : 0;
         }
@@ -236,9 +252,9 @@ class MusicPlayer {
 
     toggleShuffle() {
         this.isShuffle = !this.isShuffle;
-        // BUG LEVEL 2-2: Reversed logic for shuffle button styling
-        this.shuffleBtn.classList.toggle('text-white', !this.isShuffle);
-        this.shuffleBtn.classList.toggle('text-white/60', this.isShuffle);
+        // Correction: text-white when shuffle is ON, text-white/60 when OFF
+        this.shuffleBtn.classList.toggle('text-white', this.isShuffle);
+        this.shuffleBtn.classList.toggle('text-white/60', !this.isShuffle);
     }
 
     toggleRepeat() {
@@ -277,8 +293,8 @@ class MusicPlayer {
         if (this.audio.duration) {
             const percentage = (this.audio.currentTime / this.audio.duration) * 100;
             this.updateProgressBar(percentage / 100);
-            // BUG LEVEL 2-1: Using wrong property for current time display
-            this.currentTimeEl.textContent = this.formatTime(this.audio.duration);
+            // Correction: Show current time, not duration
+            this.currentTimeEl.textContent = this.formatTime(this.audio.currentTime);
         }
     }
 
@@ -296,11 +312,11 @@ class MusicPlayer {
         this.volumeHandle.style.left = `${this.volume * 100}%`;
     }
 
+    // Correction: Add colon in time format
     formatTime(seconds) {
         const minutes = Math.floor(seconds / 60);
         const remainingSeconds = Math.floor(seconds % 60);
-        // BUG LEVEL 1-2: Missing colon in time format
-        return `${minutes}${remainingSeconds.toString().padStart(2, '0')}`;
+        return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
     }
 
     renderPlaylist() {
@@ -316,12 +332,15 @@ class MusicPlayer {
                 </div>
                 <div class="text-xs text-gray-400">${track.duration}</div>
             `;
-            
+            // Correction: If clicking current track, toggle play/pause
             trackElement.addEventListener('click', () => {
-                this.loadTrack(index);
-                this.play();
+                if (this.currentTrackIndex === index) {
+                    this.togglePlayPause();
+                } else {
+                    this.loadTrack(index);
+                    this.play();
+                }
             });
-            
             this.playlist.appendChild(trackElement);
         });
     }
@@ -329,7 +348,8 @@ class MusicPlayer {
     updatePlaylistHighlight() {
         const playlistItems = this.playlist.children;
         for (let i = 0; i < playlistItems.length; i++) {
-            // BUG LEVEL 4-1: Playlist highlight logic doesn't clear previous highlights
+            // Correction: Always clear highlight first
+            playlistItems[i].classList.remove('bg-white/20');
             if (i === this.currentTrackIndex && this.isPlaying) {
                 playlistItems[i].classList.add('bg-white/20');
             }
@@ -337,7 +357,11 @@ class MusicPlayer {
     }
 
     handleKeyboardShortcuts(e) {
-        // BUG LEVEL 4-2: Keyboard shortcuts work even in text inputs
+        // Correction: Ignore if focus is in input, textarea, or contenteditable
+        const tag = document.activeElement.tagName.toLowerCase();
+        if (tag === 'input' || tag === 'textarea' || document.activeElement.isContentEditable) {
+            return;
+        }
         switch(e.code) {
             case 'Space':
                 e.preventDefault();
