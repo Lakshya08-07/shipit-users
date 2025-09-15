@@ -1,4 +1,4 @@
-class MusicPlayer {
+class MusicPlayer { 
     constructor() {
         // Audio element
         this.audio = document.getElementById('audioPlayer');
